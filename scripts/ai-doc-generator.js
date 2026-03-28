@@ -1,135 +1,104 @@
 #!/usr/bin/env node
 
-/**
- * CodnestX Auto Documentation Generator (Level 1)
- * Generates:
- * - Changelog
- * - Auto Docs with Code Diff
- */
-
 const fs = require("fs");
 const { execSync } = require("child_process");
 
-// Paths
-const DOCS_PATH = "./docs";
-const AUTO_PATH = "./docs/auto";
-const CHANGELOG_PATH = `${DOCS_PATH}/changelog/CHANGELOG.md`;
-
-// Ensure folders exist
-function ensureDirs() {
-  const dirs = [
-    "./docs",
-    "./docs/auto",
-    "./docs/api",
-    "./docs/changelog",
-    "./docs/architecture",
-    "./docs/user-stories",
-    "./docs/schema",
-  ];
-
-  dirs.forEach((dir) => {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  });
-}
-
-// Get latest commit message
-function getGitChanges() {
+// Get commit message
+function getCommitMsg() {
   try {
-    const output = execSync("git log -1 --pretty=format:%B").toString().trim();
-    return output || "No commit message provided";
-  } catch (err) {
-    return "No commit data found";
+    return execSync("git log -1 --pretty=format:%B").toString();
+  } catch {
+    return "No commit message";
   }
 }
 
-// Get git diff (last commit)
+// Get diff
 function getGitDiff() {
   try {
-    // Try normal diff
-    return execSync("git diff HEAD~1 HEAD").toString().slice(0, 5000);
+    return execSync("git diff HEAD~1 HEAD").toString().slice(0, 4000);
   } catch (err) {
     try {
-      // Fallback: show last commit changes
-      return execSync("git show --stat").toString().slice(0, 5000);
-    } catch (err2) {
+      return execSync("git show --stat").toString().slice(0, 4000);
+    } catch {
       return "No diff available";
     }
   }
 }
 
-// Generate Changelog
-function generateChangelog(commitMsg) {
-  const date = new Date().toISOString();
-
-  const entry = `
-## ${date}
-- ${commitMsg}
-`;
-
-  if (!fs.existsSync(CHANGELOG_PATH)) {
-    fs.writeFileSync(CHANGELOG_PATH, "# Changelog\n");
+// Load Windsurf Context (IMPORTANT)
+function getContext() {
+  try {
+    return fs.readFileSync("./ai-rules/windsurf-context.md", "utf-8");
+  } catch {
+    return "No context available";
   }
-
-  fs.appendFileSync(CHANGELOG_PATH, entry);
 }
 
-// Generate Auto Doc File
-function generateAutoDoc(commitMsg, diff) {
-  const fileName = `${AUTO_PATH}/doc-${Date.now()}.md`;
+// Call OpenAI
+async function generateAI(commitMsg, diff, context) {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      messages: [
+        {
+          role: "user",
+          content: `
+You are a senior software architect at CodnestX.
 
-  const content = `
-# 🚀 CodnestX Auto Generated Doc
+Project Context:
+${context}
 
-## 📌 Change Summary
+Commit Message:
 ${commitMsg}
 
----
-
-## 🧾 Code Changes (Diff)
-\`\`\`
+Code Changes:
 ${diff}
-\`\`\`
 
----
+Analyze and generate:
 
-## ⚡ Possible Impact
-- Review related modules
-- API endpoints might be affected
-- UI components may need updates
+1. Change Log (clear summary)
+2. Implementation Details (what was done technically)
+3. API Documentation (if any API impacted)
+4. User Story (business perspective)
+5. Schema Changes (if DB affected)
+6. Architecture Impact (system-level thinking)
 
----
+Return clean structured markdown.
+`
+        }
+      ]
+    })
+  });
 
-## 🧠 Developer Notes
-- Ensure backward compatibility
-- Validate schema changes
-- Test edge cases
-
----
-
-## 📍 Next Steps (Recommended)
-- Run application locally
-- Verify affected modules
-- Update manual docs if needed
-`;
-
-  fs.writeFileSync(fileName, content);
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || "AI generation failed";
 }
 
-// Main runner
-function run() {
-  console.log("🚀 Running CodnestX Auto Doc Generator...");
+// Save doc
+function saveDoc(content) {
+  const path = `./docs/auto/ai-doc-${Date.now()}.md`;
+  fs.writeFileSync(path, content);
+}
 
-  ensureDirs();
+// MAIN
+async function run() {
+  console.log("🚀 Running AI Doc Generator...");
 
-  const commitMsg = getGitChanges();
+  const commitMsg = getCommitMsg();
   const diff = getGitDiff();
+  const context = getContext();
 
-  generateChangelog(commitMsg);
-  generateAutoDoc(commitMsg, diff);
+  const aiDoc = await generateAI(commitMsg, diff, context);
 
-  console.log("✅ Docs generated successfully!");
+  saveDoc(aiDoc);
+
+  console.log("✅ AI Docs Generated");
 }
 
 run();
