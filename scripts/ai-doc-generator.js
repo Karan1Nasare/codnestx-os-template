@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require("fs");
+const path = require("path"); // Added to handle directory paths safely
 const { execSync } = require("child_process");
 
 // Get commit message
@@ -34,10 +35,15 @@ function getContext() {
   }
 }
 
-// Call OpenAI
+// Call Gemini API
 async function generateAI(commitMsg, diff, context) {
+  if (!process.env.GEMINI_API_KEY) {
+    console.error("❌ Error: GEMINI_API_KEY environment variable is missing.");
+    process.exit(1);
+  }
+
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
     {
       method: "POST",
       headers: {
@@ -90,8 +96,16 @@ Return clean markdown.
 
 // Save doc
 function saveDoc(content) {
-  const path = `./docs/auto/ai-doc-${Date.now()}.md`;
-  fs.writeFileSync(path, content);
+  const dirPath = "./docs/auto";
+  const filePath = path.join(dirPath, `ai-doc-${Date.now()}.md`);
+  
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+
+  fs.writeFileSync(filePath, content);
+  console.log(`📁 File saved to: ${filePath}`);
 }
 
 // MAIN
