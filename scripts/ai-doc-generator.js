@@ -76,8 +76,14 @@ Return clean structured markdown.
     })
   });
 
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || "AI generation failed";
+const data = await res.json();
+
+if (!res.ok) {
+  console.error("❌ OpenAI Error:", data);
+  return "AI generation failed";
+}
+
+return data.choices?.[0]?.message?.content || "AI generation failed";
 }
 
 // Save doc
