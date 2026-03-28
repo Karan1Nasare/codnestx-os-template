@@ -5,7 +5,7 @@ const { execSync } = require("child_process");
 async function getPRDiff() {
   try {
     return execSync("git diff origin/main...HEAD").toString().slice(0, 4000);
-  } catch {
+  } catch (error) {
     return "No diff available";
   }
 }
