@@ -13,25 +13,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ✅ IMPORTANT: Fetch 2 commits (fix HEAD~1 issue)
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
 
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
+      # ✅ Run AI script with Gemini
       - name: Run Documentation Script
         run: node scripts/ai-doc-generator.js
         env:
-          GEMINI_API_KEY: "${{ secrets.GEMINI_API_KEY }}"
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
+      # ✅ Commit generated docs
       - name: Commit & Push Docs
         run: |
           git config --global user.name "codnestx-bot"
           git config --global user.email "bot@codnestx.com"
+
           git add docs/
+
+          # Only commit if changes exist
           git diff --cached --quiet || git commit -m "🤖 Auto-generated documentation"
+
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
