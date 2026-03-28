@@ -36,7 +36,7 @@ function getContext() {
 
 // Call OpenAI
 async function generateAI(commitMsg, diff, context) {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
