@@ -4,7 +4,9 @@ on:
   push:
     branches:
       - main
-      - develop
+
+permissions:
+  contents: write
 
 jobs:
   generate-docs:
@@ -21,7 +23,7 @@ jobs:
 
       - name: Run Documentation Script
         run: node scripts/ai-doc-generator.js
-        
+
       - name: Commit & Push Docs
         run: |
          git config --global user.name "codnestx-bot"
