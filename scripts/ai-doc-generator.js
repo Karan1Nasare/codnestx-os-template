@@ -47,10 +47,15 @@ function getGitChanges() {
 // Get git diff (last commit)
 function getGitDiff() {
   try {
-    const diff = execSync("git diff HEAD~1 HEAD").toString();
-    return diff.slice(0, 5000); // Limit size (important for future AI)
+    // Try normal diff
+    return execSync("git diff HEAD~1 HEAD").toString().slice(0, 5000);
   } catch (err) {
-    return "No diff available";
+    try {
+      // Fallback: show last commit changes
+      return execSync("git show --stat").toString().slice(0, 5000);
+    } catch (err2) {
+      return "No diff available";
+    }
   }
 }
 
