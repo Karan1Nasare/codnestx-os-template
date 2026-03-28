@@ -36,19 +36,19 @@ function getContext() {
 
 // Call OpenAI
 async function generateAI(commitMsg, diff, context) {
-  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      temperature: 0.2,
-      messages: [
-        {
-          role: "user",
-          content: `
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `
 You are a senior software architect at CodnestX.
 
 Project Context:
@@ -60,30 +60,32 @@ ${commitMsg}
 Code Changes:
 ${diff}
 
-Analyze and generate:
+Generate:
+1. Change Log
+2. Implementation Details
+3. API Documentation
+4. User Story
+5. Schema Changes
+6. Architecture Impact
 
-1. Change Log (clear summary)
-2. Implementation Details (what was done technically)
-3. API Documentation (if any API impacted)
-4. User Story (business perspective)
-5. Schema Changes (if DB affected)
-6. Architecture Impact (system-level thinking)
-
-Return clean structured markdown.
+Return clean markdown.
 `
-        }
-      ]
-    })
-  });
+              }
+            ]
+          }
+        ]
+      }),
+    }
+  );
 
-const data = await res.json();
+  const data = await res.json();
 
-if (!res.ok) {
-  console.error("❌ OpenAI Error:", data);
-  return "AI generation failed";
-}
+  if (!res.ok) {
+    console.error("❌ Gemini Error:", data);
+    return "AI generation failed";
+  }
 
-return data.choices?.[0]?.message?.content || "AI generation failed";
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI generation failed";
 }
 
 // Save doc
