@@ -1,0 +1,27 @@
+name: CodnestX AI PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Run AI Reviewer
+        run: node scripts/ai-pr-reviewer.js
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
