@@ -27,3 +27,9 @@ jobs:
         run: node scripts/ai-pr-reviewer.js
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Post AI Review Comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: review.md

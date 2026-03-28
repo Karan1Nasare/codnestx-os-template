@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
+const fs = require("fs");
 const { execSync } = require("child_process");
 
-async function getPRDiff() {
+function getPRDiff() {
   try {
-    return execSync("git diff origin/main...HEAD").toString().slice(0, 4000);
+    execSync("git fetch origin main");
+    return execSync("git diff origin/main...HEAD").toString(); // ❌ no slice
   } catch (error) {
     return "No diff available";
   }
@@ -26,15 +28,15 @@ async function generateReview(diff) {
                 text: `
 You are a senior code reviewer at CodnestX.
 
-Review this code:
+Review this PR code:
 
 ${diff}
 
 Provide:
-1. Summary
-2. Issues
-3. Improvements
-4. Architecture feedback
+- Summary
+- Issues
+- Improvements
+- Architecture feedback
 
 Return clean markdown.
 `
@@ -50,19 +52,22 @@ Return clean markdown.
 
   if (!res.ok) {
     console.error("❌ Gemini Error:", data);
-    return "Review failed";
+    return "AI review failed";
   }
 
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || "Review failed";
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || "AI review failed";
 }
 
 async function run() {
   console.log("🚀 Running AI PR Reviewer...");
 
-  const diff = await getPRDiff();
+  const diff = getPRDiff();
   const review = await generateReview(diff);
 
-  console.log(review);
+  // ✅ Save to file (BEST METHOD)
+  fs.writeFileSync("review.md", review);
+
+  console.log("✅ Review generated");
 }
 
 run();
