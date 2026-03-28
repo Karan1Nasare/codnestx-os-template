@@ -21,11 +21,13 @@ jobs:
 
       - name: Run Documentation Script
         run: node scripts/ai-doc-generator.js
-
+        
       - name: Commit & Push Docs
         run: |
-          git config --global user.name "codnestx-bot"
-          git config --global user.email "bot@codnestx.com"
-          git add docs/
-          git commit -m "🤖 Auto-generated documentation" || echo "No changes to commit"
-          git push
+         git config --global user.name "codnestx-bot"
+         git config --global user.email "bot@codnestx.com"
+         git add docs/
+         git diff --cached --quiet || git commit -m "🤖 Auto-generated documentation"
+         git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:main 
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
